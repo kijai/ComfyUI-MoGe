@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib
+#import matplotlib
 
 
 def colorize_depth(depth: np.ndarray, mask: np.ndarray = None, normalize: bool = True, cmap: str = 'Spectral') -> np.ndarray:

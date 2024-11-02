@@ -1,0 +1,6 @@
+trimesh
+pillow
+scipy
+numpy
+huggingface_hub
+opencv-python

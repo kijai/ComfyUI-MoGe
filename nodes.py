@@ -1,23 +1,13 @@
 import os
-
+from pathlib import Path
 import torch
-import folder_paths
-import comfy.model_management as mm
-from comfy.utils import ProgressBar, load_torch_file
-
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-log = logging.getLogger(__name__)
+import trimesh
+import numpy as np
+from PIL import Image
 
 from .moge.model import MoGeModel
 from .utils3d.numpy import image_mesh, image_uv, depth_edge
-import trimesh
-import numpy as np
 
-from pathlib import Path
-import uuid
-import tempfile
-from PIL import Image
 from contextlib import nullcontext
 try:
     from accelerate import init_empty_weights
@@ -27,7 +17,15 @@ except:
     is_accelerate_available = False
     pass
 
+import comfy.model_management as mm
+from comfy.utils import load_torch_file
+import folder_paths
 script_directory = os.path.dirname(os.path.abspath(__file__))
+
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+log = logging.getLogger(__name__)
+
 
     
 #region ModelLoading
@@ -159,10 +157,6 @@ class MoGeProcess:
             tri=True
         )
         vertices, vertex_uvs = vertices * [1, -1, -1], vertex_uvs * [1, -1] + [0, 1]
-
-        run_id = str(uuid.uuid4())
-
-        tempdir = folder_paths.get_temp_directory()
        
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, folder_paths.get_output_directory())
 
@@ -183,7 +177,7 @@ class MoGeProcess:
                 process=False
             ).export(output_glb_path)
         elif output_format == 'ply':
-            output_ply_path = Path(tempdir, f'{run_id}.ply')
+            output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
             output_ply_path.parent.mkdir(exist_ok=True)
             trimesh.Trimesh(
                 vertices=vertices, 
