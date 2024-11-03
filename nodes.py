@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 
 from .moge.model import MoGeModel
+from .moge.utils.vis import colorize_depth
 from .utils3d.numpy import image_mesh, image_uv, depth_edge
 
 from contextlib import nullcontext
@@ -114,7 +115,7 @@ class MoGeProcess:
                  "remove_edge": ("BOOLEAN", {"default": True}),
                  "metallic_factor": ("FLOAT", {"default": 0.5, "step": 0.01}),
                  "roughness_factor": ("FLOAT", {"default": 1.0, "step": 0.01}),
-                 "output_format": (["glb", "ply"], {"default": "glb"}),
+                 "output_format": (["glb", "ply", "none"], {"default": "glb",}),
                  "filename_prefix": ("STRING", {"default": "3D/MoGe"}),
             },
         }
@@ -148,7 +149,7 @@ class MoGeProcess:
         mask_np = mask_tensor.cpu().numpy()
         input_np = image.cpu().numpy().astype(np.float32)
 
-        print(input_np[0].shape)
+        #print(input_np[0].shape)
         faces, vertices, vertex_colors, vertex_uvs = image_mesh(
             points_np,
             input_np[0],
@@ -159,40 +160,41 @@ class MoGeProcess:
         vertices, vertex_uvs = vertices * [1, -1, -1], vertex_uvs * [1, -1] + [0, 1]
        
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, folder_paths.get_output_directory())
-
-        if output_format == 'glb':
-            output_glb_path = Path(full_output_folder, f'{filename}_{counter:05}_.glb')
-            output_glb_path.parent.mkdir(exist_ok=True)
-            trimesh.Trimesh(
-                vertices=vertices * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
-                faces=faces, 
-                visual = trimesh.visual.texture.TextureVisuals(
-                    uv=vertex_uvs, 
-                    material=trimesh.visual.material.PBRMaterial(
-                        baseColorTexture=Image.fromarray((input_np[0] * 255).astype(np.uint8)),
-                        metallicFactor=metallic_factor,
-                        roughnessFactor=roughness_factor
-                    )
-                ),
-                process=False
-            ).export(output_glb_path)
-        elif output_format == 'ply':
-            output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
-            output_ply_path.parent.mkdir(exist_ok=True)
-            trimesh.Trimesh(
-                vertices=vertices, 
-                faces=faces, 
-                vertex_colors=vertex_colors,
-                process=False
-            ).export(output_ply_path)
-        counter += 1
+        if output_format != 'none':
+            if output_format == 'glb':
+                output_glb_path = Path(full_output_folder, f'{filename}_{counter:05}_.glb')
+                output_glb_path.parent.mkdir(exist_ok=True)
+                trimesh.Trimesh(
+                    vertices=vertices * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
+                    faces=faces, 
+                    visual = trimesh.visual.texture.TextureVisuals(
+                        uv=vertex_uvs, 
+                        material=trimesh.visual.material.PBRMaterial(
+                            baseColorTexture=Image.fromarray((input_np[0] * 255).astype(np.uint8)),
+                            metallicFactor=metallic_factor,
+                            roughnessFactor=roughness_factor
+                        )
+                    ),
+                    process=False
+                ).export(output_glb_path)
+            elif output_format == 'ply':
+                output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
+                output_ply_path.parent.mkdir(exist_ok=True)
+                trimesh.Trimesh(
+                    vertices=vertices, 
+                    faces=faces, 
+                    vertex_colors=vertex_colors,
+                    process=False
+                ).export(output_ply_path)
+            counter += 1
        
-        depth_min = depth_tensor.min()
-        depth_max = depth_tensor.max()
-        depth_tensor = 1 - ((depth_tensor - depth_min) / (depth_max - depth_min))
-        depth_tensor = depth_tensor.unsqueeze(0).cpu().float()
+        
+        grayscale_depth = colorize_depth(depth_np, mask=mask_np, normalize=True)
+        grayscale_depth = torch.from_numpy(grayscale_depth).cpu() / 255
+        grayscale_depth = grayscale_depth.unsqueeze(0).unsqueeze(-1).cpu().float()
+        grayscale_depth = grayscale_depth.repeat(1, 1, 1, 3)
 
-        return depth_tensor,
+        return grayscale_depth,
     
 
 #endregion

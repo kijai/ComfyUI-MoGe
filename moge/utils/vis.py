@@ -1,5 +1,5 @@
 import numpy as np
-#import matplotlib
+import matplotlib
 
 
 def colorize_depth(depth: np.ndarray, mask: np.ndarray = None, normalize: bool = True, cmap: str = 'Spectral') -> np.ndarray:
@@ -11,9 +11,11 @@ def colorize_depth(depth: np.ndarray, mask: np.ndarray = None, normalize: bool =
     if normalize:
         min_disp, max_disp = np.nanquantile(disp, 0.001), np.nanquantile(disp, 0.999)
         disp = (disp - min_disp) / (max_disp - min_disp)
-    colored = np.nan_to_num(matplotlib.colormaps[cmap](1.0 - disp), 0)
-    colored = (colored.clip(0, 1) * 255).astype(np.uint8)[:, :, :3]
-    return colored
+    #colored = np.nan_to_num(matplotlib.colormaps[cmap](1.0 - disp), 0)
+    #colored = (colored.clip(0, 1) * 255).astype(np.uint8)[:, :, :3]
+    grayscale = np.nan_to_num(disp, nan=0.0)
+    grayscale = (grayscale * 255).astype(np.uint8)
+    return grayscale
 
 
 def colorize_depth_affine(depth: np.ndarray, mask: np.ndarray = None, cmap: str = 'Spectral') -> np.ndarray:
