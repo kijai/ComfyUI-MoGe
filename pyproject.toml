@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-moge"
+description = "NODES:(Down)load MoGe Model, MoGe Process"
+version = "1.0.0"
+license = {file = "LICENSE"}
+dependencies = ["trimesh", "pillow", "scipy", "numpy", "huggingface_hub", "opencv-python"]
+
+[project.urls]
+Repository = "https://github.com/kijai/ComfyUI-MoGe"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-MoGe"
+Icon = ""
