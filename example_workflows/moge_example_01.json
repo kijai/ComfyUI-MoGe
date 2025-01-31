@@ -1,0 +1,248 @@
+{
+  "last_node_id": 33,
+  "last_link_id": 33,
+  "nodes": [
+    {
+      "id": 31,
+      "type": "LoadImage",
+      "pos": [
+        471.9734191894531,
+        214.61387634277344
+      ],
+      "size": [
+        289.3332824707031,
+        365.3332824707031
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            31
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ]
+    },
+    {
+      "id": 29,
+      "type": "DownloadAndLoadMoGeModel",
+      "pos": [
+        493.4897155761719,
+        45.61670684814453
+      ],
+      "size": [
+        315,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "mochi_model",
+          "type": "MOGEMODEL",
+          "links": [
+            30
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DownloadAndLoadMoGeModel"
+      },
+      "widgets_values": [
+        "MoGe_ViT_L_fp16.safetensors",
+        "fp32"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "MoGeProcess",
+      "pos": [
+        895.78173828125,
+        46.995784759521484
+      ],
+      "size": [
+        344.33343505859375,
+        198
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MOGEMODEL",
+          "link": 30
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 31
+        }
+      ],
+      "outputs": [
+        {
+          "name": "depth",
+          "type": "IMAGE",
+          "links": [
+            32
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "glb_path",
+          "type": "STRING",
+          "links": [
+            33
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MoGeProcess"
+      },
+      "widgets_values": [
+        9,
+        true,
+        1,
+        1,
+        "glb",
+        "3D/MoGe"
+      ]
+    },
+    {
+      "id": 32,
+      "type": "PreviewImage",
+      "pos": [
+        875.4752197265625,
+        312.2718505859375
+      ],
+      "size": [
+        304.6000061035156,
+        330.3333435058594
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 32
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 33,
+      "type": "Preview3D",
+      "pos": [
+        1322.3359375,
+        60.56986999511719
+      ],
+      "size": [
+        462.3999938964844,
+        642.4000244140625
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model_file",
+          "type": "STRING",
+          "link": 33,
+          "widget": {
+            "name": "model_file"
+          }
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "Preview3D"
+      },
+      "widgets_values": [
+        "3D/MoGe_00012_.glb",
+        "original",
+        "#000000",
+        10,
+        "original",
+        75,
+        null
+      ]
+    }
+  ],
+  "links": [
+    [
+      30,
+      29,
+      0,
+      30,
+      0,
+      "MOGEMODEL"
+    ],
+    [
+      31,
+      31,
+      0,
+      30,
+      1,
+      "IMAGE"
+    ],
+    [
+      32,
+      30,
+      0,
+      32,
+      0,
+      "IMAGE"
+    ],
+    [
+      33,
+      30,
+      1,
+      33,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9090909090909094,
+      "offset": [
+        -144.60224865039493,
+        352.6635117049205
+      ]
+    },
+    "node_versions": {
+      "comfy-core": "0.3.12",
+      "ComfyUI-MoGe": "65e5bd547269b7af9abd5f581cde8605e32e3601"
+    },
+    "VHS_latentpreview": true,
+    "VHS_latentpreviewrate": 0
+  },
+  "version": 0.4
+}

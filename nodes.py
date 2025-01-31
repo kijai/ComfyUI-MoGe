@@ -120,8 +120,8 @@ class MoGeProcess:
             },
         }
 
-    RETURN_TYPES = ("IMAGE", )
-    RETURN_NAMES = ("depth", )
+    RETURN_TYPES = ("IMAGE", "STRING", )
+    RETURN_NAMES = ("depth", "glb_path", )
     FUNCTION = "process"
     CATEGORY = "MoGe"
     OUTPUT_NODE = True
@@ -165,7 +165,7 @@ class MoGeProcess:
                 output_glb_path = Path(full_output_folder, f'{filename}_{counter:05}_.glb')
                 output_glb_path.parent.mkdir(exist_ok=True)
                 trimesh.Trimesh(
-                    vertices=vertices * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
+                    vertices=vertices,# * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
                     faces=faces, 
                     visual = trimesh.visual.texture.TextureVisuals(
                         uv=vertex_uvs, 
@@ -177,6 +177,7 @@ class MoGeProcess:
                     ),
                     process=False
                 ).export(output_glb_path)
+                relative_path = Path(subfolder) / f'{filename}_{counter:05}_.glb'
             elif output_format == 'ply':
                 output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
                 output_ply_path.parent.mkdir(exist_ok=True)
@@ -194,7 +195,7 @@ class MoGeProcess:
         grayscale_depth = grayscale_depth.unsqueeze(0).unsqueeze(-1).cpu().float()
         grayscale_depth = grayscale_depth.repeat(1, 1, 1, 3)
 
-        return grayscale_depth,
+        return grayscale_depth, str(relative_path),
     
 
 #endregion
