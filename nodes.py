@@ -49,7 +49,7 @@ class DownloadAndLoadMoGeModel:
         }
 
     RETURN_TYPES = ("MOGEMODEL",)
-    RETURN_NAMES = ("mochi_model", )
+    RETURN_NAMES = ("moge_model", )
     FUNCTION = "loadmodel"
     CATEGORY = "MoGe"
     DESCRIPTION = "Downloads and loads the selected MoGe model from Huggingface"
@@ -68,7 +68,7 @@ class DownloadAndLoadMoGeModel:
         repo_id = "kijai/MoGE_safetensors"
         
         if not os.path.exists(model_path):
-            log.info(f"Downloading mochi model to: {model_path}")
+            log.info(f"Downloading moge model to: {model_path}")
             from huggingface_hub import snapshot_download
             snapshot_download(
                 repo_id=repo_id,
