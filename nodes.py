@@ -134,9 +134,9 @@ class MoGeProcess:
         mm.soft_empty_cache()
 
         B, H, W, C = image.shape
-  
+
         input_tensor = image.permute(0, 3, 1, 2).to(device)
-        
+
         # model infer
         output = model.infer(input_tensor[0], resolution_level=resolution_level, apply_mask=True)
         # tensor outputs
@@ -158,17 +158,19 @@ class MoGeProcess:
             tri=True
         )
         vertices, vertex_uvs = vertices * [1, -1, -1], vertex_uvs * [1, -1] + [0, 1]
-       
+
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, folder_paths.get_output_directory())
+        relative_path = None  # Initialize relative_path
+
         if output_format != 'none':
             if output_format == 'glb':
                 output_glb_path = Path(full_output_folder, f'{filename}_{counter:05}_.glb')
                 output_glb_path.parent.mkdir(exist_ok=True)
                 trimesh.Trimesh(
                     vertices=vertices,# * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
-                    faces=faces, 
+                    faces=faces,
                     visual = trimesh.visual.texture.TextureVisuals(
-                        uv=vertex_uvs, 
+                        uv=vertex_uvs,
                         material=trimesh.visual.material.PBRMaterial(
                             baseColorTexture=Image.fromarray((input_np[0] * 255).astype(np.uint8)),
                             metallicFactor=metallic_factor,
@@ -182,20 +184,21 @@ class MoGeProcess:
                 output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
                 output_ply_path.parent.mkdir(exist_ok=True)
                 trimesh.Trimesh(
-                    vertices=vertices, 
-                    faces=faces, 
+                    vertices=vertices,
+                    faces=faces,
                     vertex_colors=vertex_colors,
                     process=False
                 ).export(output_ply_path)
+                relative_path = Path(subfolder) / f'{filename}_{counter:05}_.ply'
             counter += 1
-       
-        
+
         grayscale_depth = colorize_depth(depth_np, mask=mask_np, normalize=True)
         grayscale_depth = torch.from_numpy(grayscale_depth).cpu() / 255
         grayscale_depth = grayscale_depth.unsqueeze(0).unsqueeze(-1).cpu().float()
         grayscale_depth = grayscale_depth.repeat(1, 1, 1, 3)
 
-        return grayscale_depth, str(relative_path),
+        return grayscale_depth, '' if relative_path is None else str(relative_path),
+
     
 
 #endregion
