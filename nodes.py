@@ -115,19 +115,19 @@ class MoGeProcess:
                  "remove_edge": ("BOOLEAN", {"default": True}),
                  "metallic_factor": ("FLOAT", {"default": 0.5, "step": 0.01}),
                  "roughness_factor": ("FLOAT", {"default": 1.0, "step": 0.01}),
-                 "output_format": (["glb", "ply", "none"], {"default": "glb",}),
+                 "save_format": (["glb", "ply", "none"], {"default": "glb",}),
                  "filename_prefix": ("STRING", {"default": "3D/MoGe"}),
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "STRING", )
-    RETURN_NAMES = ("depth", "glb_path", )
+    RETURN_TYPES = ("IMAGE", "STRING", "TRIMESH", )
+    RETURN_NAMES = ("depth", "glb_path", "trimesh", )
     FUNCTION = "process"
     CATEGORY = "MoGe"
     OUTPUT_NODE = True
     DESCRIPTION = "Runs the MoGe model on the input image"
 
-    def process(self, model, image, resolution_level, remove_edge, metallic_factor, roughness_factor, output_format, filename_prefix):
+    def process(self, model, image, resolution_level, remove_edge, metallic_factor, roughness_factor, save_format, filename_prefix):
 
         device = mm.get_torch_device()
         offload_device = mm.unet_offload_device()
@@ -161,43 +161,44 @@ class MoGeProcess:
 
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, folder_paths.get_output_directory())
         relative_path = None  # Initialize relative_path
+        mesh = None  # Initialize mesh
 
-        if output_format != 'none':
-            if output_format == 'glb':
+        if save_format == 'ply':
+            output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
+            output_ply_path.parent.mkdir(exist_ok=True)
+            trimesh.Trimesh(
+                vertices=vertices, 
+                faces=faces, 
+                vertex_colors=vertex_colors,
+                process=False
+            ).export(output_ply_path)
+        else:
+            mesh = trimesh.Trimesh(
+                vertices=vertices,# * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
+                faces=faces,
+                visual = trimesh.visual.texture.TextureVisuals(
+                    uv=vertex_uvs,
+                    material=trimesh.visual.material.PBRMaterial(
+                        baseColorTexture=Image.fromarray((input_np[0] * 255).astype(np.uint8)),
+                        metallicFactor=metallic_factor,
+                        roughnessFactor=roughness_factor
+                    )
+                ),
+                process=False
+            )
+            if save_format == 'glb':
                 output_glb_path = Path(full_output_folder, f'{filename}_{counter:05}_.glb')
                 output_glb_path.parent.mkdir(exist_ok=True)
-                trimesh.Trimesh(
-                    vertices=vertices,# * [-1, 1, -1],    # No idea why Gradio 3D Viewer' default camera is flipped
-                    faces=faces,
-                    visual = trimesh.visual.texture.TextureVisuals(
-                        uv=vertex_uvs,
-                        material=trimesh.visual.material.PBRMaterial(
-                            baseColorTexture=Image.fromarray((input_np[0] * 255).astype(np.uint8)),
-                            metallicFactor=metallic_factor,
-                            roughnessFactor=roughness_factor
-                        )
-                    ),
-                    process=False
-                ).export(output_glb_path)
+                mesh.export(output_glb_path)
                 relative_path = Path(subfolder) / f'{filename}_{counter:05}_.glb'
-            elif output_format == 'ply':
-                output_ply_path = Path(full_output_folder, f'{filename}_{counter:05}_.ply')
-                output_ply_path.parent.mkdir(exist_ok=True)
-                trimesh.Trimesh(
-                    vertices=vertices,
-                    faces=faces,
-                    vertex_colors=vertex_colors,
-                    process=False
-                ).export(output_ply_path)
-                relative_path = Path(subfolder) / f'{filename}_{counter:05}_.ply'
             counter += 1
-
+       
         grayscale_depth = colorize_depth(depth_np, mask=mask_np, normalize=True)
         grayscale_depth = torch.from_numpy(grayscale_depth).cpu() / 255
         grayscale_depth = grayscale_depth.unsqueeze(0).unsqueeze(-1).cpu().float()
         grayscale_depth = grayscale_depth.repeat(1, 1, 1, 3)
 
-        return grayscale_depth, '' if relative_path is None else str(relative_path),
+        return grayscale_depth, '' if relative_path is None else str(relative_path), mesh,
 
     
 
